@@ -1,0 +1,2750 @@
+<!DOCTYPE html>
+<html lang="fr" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>30 Jour - Plateforme de Défis</title>
+    <style>
+        /* ==============================================
+           CSS/BASE.CSS - Reset + Variables 
+        ============================================== */
+        :root {
+            --primary-color: #2B6CB0;
+            --secondary-gradient-start: #FF7E5F;
+            --secondary-gradient-end: #FEB47B;
+            --bg-color: #F8FAFC;
+            --sidebar-bg: #FFFFFF;
+            --text-primary: #1F2937;
+            --text-secondary: #6B7280;
+            --border-color: #E5E7EB;
+            --success-color: #10B981;
+            --warning-color: #F59E0B;
+            --radius: 16px;
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+       // ==============================================
+        // JS/COMPONENTS/PROGRESS-BAR.JS
+        // ==============================================
+        class ProgressBar {
+            constructor(container, value, max = 100) {
+                this.container = container;
+                this.value = value;
+                this.max = max;
+                this.render();
+            }
+
+            render() {
+                const percentage = Math.round((this.value / this.max) * 100);
+                this.container.innerHTML = `
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: ${percentage}%"></div>
+                    </div>
+                `;
+            }
+
+            updateValue(newValue) {
+                this.value = newValue;
+                this.render();
+            }
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        /* ==============================================
+           CSS/LAYOUT.CSS - Grid / Flex العام
+        ============================================== */
+        .app-container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            margin-left: 280px;
+            transition: margin-left 0.3s ease;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                margin-left: 0;
+            }
+        }
+
+        /* ==============================================
+           CSS/COMPONENTS/SIDEBAR.CSS
+        ============================================== */
+        .sidebar {
+            width: 280px;
+            background: var(--sidebar-bg);
+            border-right: 1px solid var(--border-color);
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            padding: 2rem 1.5rem;
+            display: flex;
+            flex-direction: column;
+            z-index: 1000;
+            transition: transform 0.3s ease;
+        }
+
+        .sidebar.hidden {
+            transform: translateX(-100%);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 2rem;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+
+        .nav-links {
+            list-style: none;
+            margin-bottom: 2rem;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 1rem;
+            border-radius: var(--radius);
+            text-decoration: none;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .nav-link:hover,
+        .nav-link.active {
+            background: linear-gradient(135deg, var(--primary-color), #3B82F6);
+            color: white;
+            transform: translateX(4px);
+        }
+
+        .start-challenge-btn {
+            background: linear-gradient(135deg, var(--secondary-gradient-start), var(--secondary-gradient-end));
+            color: white;
+            border: none;
+            padding: 1rem;
+            border-radius: var(--radius);
+            font-weight: 600;
+            cursor: pointer;
+            margin-bottom: 2rem;
+            transition: all 0.2s ease;
+        }
+
+        .start-challenge-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .user-badge {
+            margin-top: auto;
+            padding: 1rem;
+            background: var(--bg-color);
+            border-radius: var(--radius);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+        }
+
+        .support-box {
+            margin-top: 1rem;
+            padding: 0.75rem;
+            background: #FEF3C7;
+            border-radius: var(--radius);
+            text-align: center;
+            font-size: 0.875rem;
+            color: #92400E;
+        }
+
+        /* ==============================================
+           CSS/COMPONENTS/HEADER.CSS
+        ============================================== */
+        .header {
+            background: white;
+            padding: 1.5rem 2rem;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+        }
+
+        .search-container {
+            flex: 1;
+            max-width: 400px;
+            position: relative;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 0.75rem 1rem 0.75rem 2.5rem;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            background: var(--bg-color);
+            outline: none;
+            transition: all 0.2s ease;
+        }
+
+        .search-input:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(43, 108, 176, 0.1);
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-secondary);
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .date-display {
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .notification-btn,
+        .new-challenge-btn {
+            padding: 0.5rem;
+            border: none;
+            border-radius: 50%;
+            background: var(--bg-color);
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .new-challenge-btn {
+            background: var(--primary-color);
+            color: white;
+            border-radius: var(--radius);
+            padding: 0.75rem 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .notification-btn:hover,
+        .new-challenge-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .hamburger {
+            display: none;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--text-primary);
+        }
+
+        @media (max-width: 768px) {
+            .hamburger {
+                display: block;
+            }
+            
+            .search-container {
+                display: none;
+            }
+        }
+
+        /* ==============================================
+           CSS/COMPONENTS/CARD.CSS
+        ============================================== */
+        .card {
+            background: white;
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            transition: all 0.2s ease;
+        }
+
+        .card:hover {
+            box-shadow: var(--shadow-md);
+            transform: translateY(-2px);
+        }
+
+        .challenge-card {
+            background: white;
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .challenge-card:hover {
+            box-shadow: var(--shadow-md);
+            transform: translateY(-2px);
+        }
+
+        .challenge-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .challenge-icon {
+            font-size: 2rem;
+        }
+
+        .challenge-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.25rem;
+        }
+
+        .challenge-category {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+
+        .challenge-progress {
+            margin-bottom: 1rem;
+        }
+
+        .progress-text {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+
+        /* ==============================================
+           CSS/COMPONENTS/PROGRESS-BAR.CSS
+        ============================================== */
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #E5E7EB;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--success-color), #34D399);
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+
+        .mark-done-btn {
+            background: var(--success-color);
+            color: white;
+            border: none;
+            padding: 0.75rem 1rem;
+            border-radius: var(--radius);
+            font-weight: 500;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .mark-done-btn:hover {
+            background: #059669;
+            transform: translateY(-1px);
+        }
+
+        .mark-done-btn.completed {
+            background: #6B7280;
+            cursor: default;
+        }
+
+        .mark-done-btn.completed:hover {
+            transform: none;
+        }
+
+        /* ==============================================
+           CSS/PAGES/DASHBOARD.CSS
+        ============================================== */
+        .page-content {
+            padding: 2rem;
+            flex: 1;
+        }
+
+        .welcome-section {
+            margin-bottom: 2rem;
+        }
+
+        .welcome-card {
+            background: linear-gradient(135deg, var(--primary-color), #3B82F6);
+            color: white;
+            border-radius: var(--radius);
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .welcome-title {
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .welcome-subtitle {
+            margin-bottom: 1.5rem;
+            opacity: 0.9;
+        }
+
+        .browse-challenges-btn {
+            background: white;
+            color: var(--primary-color);
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: var(--radius);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .browse-challenges-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .challenges-section h2,
+        .sidebar-content h3 {
+            margin-bottom: 1.5rem;
+            color: var(--text-primary);
+        }
+
+        .challenges-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .sidebar-content {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        .mini-calendar {
+            background: white;
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 0.5rem;
+            text-align: center;
+        }
+
+        .calendar-day {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .calendar-day.today {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .calendar-day.completed {
+            background: var(--success-color);
+            color: white;
+        }
+
+        .calendar-day.pending {
+            background: var(--warning-color);
+            color: white;
+        }
+
+        .calendar-day:hover {
+            background: var(--bg-color);
+        }
+
+        .reminders-section {
+            background: white;
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .reminder-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .reminder-item:last-child {
+            border-bottom: none;
+        }
+
+        .reminder-icon {
+            color: var(--primary-color);
+        }
+
+        .reminder-content {
+            flex: 1;
+        }
+
+        .reminder-title {
+            font-weight: 500;
+            margin-bottom: 0.25rem;
+        }
+
+        .reminder-time {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+
+        .reminder-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .reminder-btn {
+            padding: 0.25rem 0.5rem;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .snooze-btn {
+            background: #FEF3C7;
+            color: #92400E;
+        }
+
+        .done-btn {
+            background: #D1FAE5;
+            color: #065F46;
+        }
+
+        @media (max-width: 1024px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .page-content {
+                padding: 1rem;
+            }
+            
+            .challenges-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* ==============================================
+           CSS/PAGES/CHALLENGES.CSS
+        ============================================== */
+        .page-header {
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+
+        .page-header h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            color: var(--text-primary);
+        }
+
+        .page-header p {
+            color: var(--text-secondary);
+            font-size: 1.125rem;
+        }
+
+        .filters-panel {
+            display: flex;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            background: white;
+            border-radius: var(--radius);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .filter-group label {
+            font-weight: 500;
+            color: var(--text-primary);
+            font-size: 0.875rem;
+        }
+
+        .filter-select {
+            padding: 0.5rem 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background: white;
+            color: var(--text-primary);
+            outline: none;
+            transition: all 0.2s ease;
+        }
+
+        .filter-select:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(43, 108, 176, 0.1);
+        }
+
+        .challenge-gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .gallery-challenge-card {
+            background: white;
+            border-radius: var(--radius);
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .gallery-challenge-card:hover {
+            box-shadow: var(--shadow-md);
+            transform: translateY(-4px);
+        }
+
+        .challenge-image {
+            height: 200px;
+            background: linear-gradient(135deg, var(--secondary-gradient-start), var(--secondary-gradient-end));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+        }
+
+        .challenge-info {
+            padding: 1.5rem;
+        }
+
+        .challenge-tags {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .challenge-tag {
+            padding: 0.25rem 0.75rem;
+            background: var(--bg-color);
+            border-radius: 20px;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        .start-challenge-card-btn {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: var(--radius);
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.2s ease;
+        }
+
+        .start-challenge-card-btn:hover {
+            background: #1E40AF;
+            transform: translateY(-1px);
+        }
+
+        /* ==============================================
+           CSS/PAGES/CALENDAR.CSS
+        ============================================== */
+        .calendar-controls {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 2rem;
+            padding: 1rem 2rem;
+            background: white;
+            border-radius: var(--radius);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .calendar-nav {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 0.75rem 1rem;
+            border-radius: var(--radius);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .calendar-nav:hover {
+            background: #1E40AF;
+            transform: translateY(-1px);
+        }
+
+        .full-calendar-container {
+            background: white;
+            border-radius: var(--radius);
+            padding: 2rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .calendar-legend {
+            display: flex;
+            gap: 2rem;
+            margin-bottom: 2rem;
+            justify-content: center;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .legend-color {
+            width: 16px;
+            height: 16px;
+            border-radius: 4px;
+        }
+
+        .full-calendar {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 1px;
+            background: var(--border-color);
+            border-radius: var(--radius);
+            overflow: hidden;
+        }
+
+        .calendar-day-header {
+            background: var(--bg-color);
+            padding: 1rem;
+            text-align: center;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        .calendar-day-full {
+            background: white;
+            min-height: 120px;
+            padding: 0.75rem;
+            position: relative;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .calendar-day-full:hover {
+            background: var(--bg-color);
+        }
+
+        .calendar-day-full.today {
+            background: rgba(43, 108, 176, 0.1);
+            border: 2px solid var(--primary-color);
+        }
+
+        .calendar-day-full.completed {
+            background: rgba(16, 185, 129, 0.1);
+        }
+
+        .calendar-day-full.pending {
+            background: rgba(245, 158, 11, 0.1);
+        }
+
+        .day-number {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .day-challenges {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .day-challenge-item {
+            background: var(--primary-color);
+            color: white;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .day-drawer {
+            position: fixed;
+            right: 0;
+            top: 0;
+            height: 100vh;
+            width: 400px;
+            background: white;
+            box-shadow: -4px 0 20px rgba(0, 0, 0, 0.1);
+            z-index: 1001;
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+        }
+
+        .day-drawer.open {
+            transform: translateX(0);
+        }
+
+        .drawer-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .close-drawer {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--text-secondary);
+        }
+
+        .drawer-content {
+            padding: 1.5rem;
+        }
+
+        /* ==============================================
+           CSS/PAGES/PROGRESS.CSS
+        ============================================== */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: var(--radius);
+            padding: 2rem;
+            text-align: center;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            transition: all 0.2s ease;
+        }
+
+        .stat-card:hover {
+            box-shadow: var(--shadow-md);
+            transform: translateY(-2px);
+        }
+
+        .stat-number {
+            font-size: 3rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-trend {
+            font-size: 0.875rem;
+            color: var(--success-color);
+            font-weight: 500;
+        }
+
+        .progress-charts {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 2rem;
+        }
+
+        .chart-container,
+        .achievements-container {
+            background: white;
+            border-radius: var(--radius);
+            padding: 2rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .challenge-progress-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .challenge-progress-item:last-child {
+            border-bottom: none;
+        }
+
+        .progress-info {
+            flex: 1;
+        }
+
+        .progress-name {
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .progress-days {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+
+        .circular-progress {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: conic-gradient(var(--success-color) 0deg, var(--bg-color) 0deg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        .achievements-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1rem;
+        }
+
+        .achievement-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            background: var(--bg-color);
+            border-radius: var(--radius);
+        }
+
+        .achievement-icon {
+            font-size: 2rem;
+        }
+
+        .achievement-info h4 {
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .achievement-info p {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+
+        /* ==============================================
+           CSS/PAGES/SETTINGS.CSS
+        ============================================== */
+        .settings-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .settings-section {
+            background: white;
+            border-radius: var(--radius);
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .settings-section h3 {
+            margin-bottom: 1.5rem;
+            color: var(--text-primary);
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 0.75rem;
+        }
+
+        .setting-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.5rem;
+        }
+
+        .setting-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .setting-item label {
+            font-weight: 500;
+            color: var(--text-primary);
+            flex: 1;
+        }
+
+        .setting-input,
+        .setting-select {
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            background: white;
+            color: var(--text-primary);
+            outline: none;
+            transition: all 0.2s ease;
+            max-width: 300px;
+            width: 100%;
+        }
+
+        .setting-input:focus,
+        .setting-select:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(43, 108, 176, 0.1);
+        }
+
+        .avatar-upload {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .current-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 1.25rem;
+        }
+
+        .upload-btn {
+            background: var(--bg-color);
+            border: 1px solid var(--border-color);
+            padding: 0.5rem 1rem;
+            border-radius: var(--radius);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .upload-btn:hover {
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-label {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 34px;
+        }
+
+        .toggle-label:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .toggle-label {
+            background-color: var(--primary-color);
+        }
+
+        input:checked + .toggle-label:before {
+            transform: translateX(26px);
+        }
+
+        .update-password-btn {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: var(--radius);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-top: 1rem;
+        }
+
+        .update-password-btn:hover {
+            background: #1E40AF;
+            transform: translateY(-1px);
+        }
+
+        .danger-zone {
+            border: 2px solid #EF4444;
+            background: #FEF2F2;
+        }
+
+        .danger-zone h3 {
+            color: #EF4444;
+        }
+
+        .delete-account-btn {
+            background: #EF4444;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: var(--radius);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .delete-account-btn:hover {
+            background: #DC2626;
+            transform: translateY(-1px);
+        }
+
+        /* ==============================================
+           MODAL STYLES
+        ============================================== */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: var(--radius);
+            padding: 2rem;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            transform: scale(0.9);
+            transition: transform 0.3s ease;
+        }
+
+        .modal-overlay.active .modal-content {
+            transform: scale(1);
+        }
+
+        .modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .modal-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--text-secondary);
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .form-input,
+        .form-select,
+        .form-textarea {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            background: white;
+            color: var(--text-primary);
+            outline: none;
+            transition: all 0.2s ease;
+        }
+
+        .form-textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .form-input:focus,
+        .form-select:focus,
+        .form-textarea:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(43, 108, 176, 0.1);
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+            margin-top: 2rem;
+        }
+
+        .btn-cancel {
+            background: var(--bg-color);
+            color: var(--text-secondary);
+            border: 1px solid var(--border-color);
+            padding: 0.75rem 1.5rem;
+            border-radius: var(--radius);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-cancel:hover {
+            background: var(--border-color);
+        }
+
+        .btn-primary {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: var(--radius);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-primary:hover {
+            background: #1E40AF;
+            transform: translateY(-1px);
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar (partial/sidebar.html) -->
+        <nav class="sidebar" id="sidebar">
+            <div class="logo">
+                <span>📅</span>
+                <span>30 Jour</span>
+            </div>
+            
+            <ul class="nav-links">
+                <li><a href="#" class="nav-link active" data-page="dashboard">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/>
+                    </svg>
+                    Dashboard
+                </a></li>
+                <li><a href="#" class="nav-link" data-page="challenges">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                    </svg>
+                    Défis
+                </a></li>
+                <li><a href="#" class="nav-link" data-page="calendar">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/>
+                    </svg>
+                    Calendrier
+                </a></li>
+                <li><a href="#" class="nav-link" data-page="progress">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                    </svg>
+                    Progrès
+                </a></li>
+                <li><a href="#" class="nav-link" data-page="settings">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.07-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.74,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.82,11.69,4.82,12s0.02,0.64,0.07,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.47-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/>
+                    </svg>
+                    Paramètres
+                </a></li>
+            </ul>
+
+            <button class="start-challenge-btn">
+                + Nouveau Défi
+            </button>
+
+            <div class="user-badge">
+                <div class="user-avatar">AM</div>
+                <div>
+                    <div style="font-weight: 600;">Ahmed Mansouri</div>
+                    <div style="font-size: 0.875rem; color: var(--text-secondary);">Niveau 5</div>
+                </div>
+            </div>
+
+            <div class="support-box">
+                <strong>Aide 24/7</strong><br>
+                <a href="#" style="color: inherit;">Contactez-nous</a>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Header (partial/header.html) -->
+            <header class="header">
+                <button class="hamburger" id="hamburger">☰</button>
+                
+                <div class="search-container">
+                    <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+                    </svg>
+                    <input type="text" class="search-input" placeholder="Rechercher des défis...">
+                </div>
+
+                <div class="header-actions">
+                    <div class="date-display">28 Juin 2025, Samedi</div>
+                    
+                    <button class="notification-btn">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/>
+                        </svg>
+                    </button>
+
+                    <button class="new-challenge-btn">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+                        </svg>
+                        Nouveau Défi
+                    </button>
+                </div>
+            </header>
+
+            <!-- Page Content -->
+            <div class="page-content" id="page-content">
+                <!-- Dashboard Content -->
+                <div id="dashboard-page">
+                    <section class="welcome-section">
+                        <div class="welcome-card">
+                            <h1 class="welcome-title">Bienvenue, Ahmed! 👋</h1>
+                            <p class="welcome-subtitle">Continuez votre parcours de développement personnel avec des défis quotidiens motivants.</p>
+                            <button class="browse-challenges-btn">Parcourir les Défis</button>
+                        </div>
+                    </section>
+
+                    <div class="dashboard-grid">
+                        <section class="challenges-section">
+                            <h2>Mes Défis Actuels</h2>
+                            <div class="challenges-grid" id="challenges-grid">
+                                <!-- Challenge cards will be populated by JavaScript -->
+                            </div>
+                        </section>
+
+                        <div class="sidebar-content">
+                            <section class="mini-calendar">
+                                <h3>Juin 2025</h3>
+                                <div class="calendar-header">
+                                    <button>‹</button>
+                                    <span>Juin 2025</span>
+                                    <button>›</button>
+                                </div>
+                                <div class="calendar-grid">
+                                    <div style="font-size: 0.75rem; color: var(--text-secondary);">Lu</div>
+                                    <div style="font-size: 0.75rem; color: var(--text-secondary);">Ma</div>
+                                    <div style="font-size: 0.75rem; color: var(--text-secondary);">Me</div>
+                                    <div style="font-size: 0.75rem; color: var(--text-secondary);">Je</div>
+                                    <div style="font-size: 0.75rem; color: var(--text-secondary);">Ve</div>
+                                    <div style="font-size: 0.75rem; color: var(--text-secondary);">Sa</div>
+                                    <div style="font-size: 0.75rem; color: var(--text-secondary);">Di</div>
+                                    <!-- Calendar days will be generated by JavaScript -->
+                                </div>
+                            </section>
+
+                            <section class="reminders-section">
+                                <h3>Rappels</h3>
+                                <div id="reminders-list">
+                                    <!-- Reminders will be populated by JavaScript -->
+                                </div>
+                            </section>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Challenges Page -->
+                <div id="challenges-page" style="display: none;">
+                    <div class="page-header">
+                        <h1>Découvrir les Défis</h1>
+                        <p>Choisissez un défi pour transformer votre vie en 30 jours</p>
+                    </div>
+
+                    <!-- Filters -->
+                    <div class="filters-panel">
+                        <div class="filter-group">
+                            <label>Catégorie:</label>
+                            <select id="category-filter" class="filter-select">
+                                <option value="">Toutes</option>
+                                <option value="fitness">Fitness & Santé</option>
+                                <option value="learning">Apprentissage</option>
+                                <option value="productivity">Productivité</option>
+                                <option value="creativity">Créativité</option>
+                                <option value="wellbeing">Bien-être</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label>Difficulté:</label>
+                            <select id="difficulty-filter" class="filter-select">
+                                <option value="">Toutes</option>
+                                <option value="easy">Facile</option>
+                                <option value="medium">Moyen</option>
+                                <option value="hard">Difficile</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label>Statut:</label>
+                            <select id="status-filter" class="filter-select">
+                                <option value="">Tous</option>
+                                <option value="new">Nouveau</option>
+                                <option value="popular">Populaire</option>
+                                <option value="completed">Terminé</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Challenge Gallery -->
+                    <div class="challenge-gallery" id="challenge-gallery">
+                        <!-- Challenge cards will be populated by JavaScript -->
+                    </div>
+                </div>
+
+                <!-- Calendar Page -->
+                <div id="calendar-page" style="display: none;">
+                    <div class="page-header">
+                        <h1>Mon Calendrier de Défis</h1>
+                        <p>Visualisez vos progrès jour par jour</p>
+                    </div>
+
+                    <div class="calendar-controls">
+                        <button class="calendar-nav" id="prev-month">‹ Mois Précédent</button>
+                        <h2 id="current-month">Juin 2025</h2>
+                        <button class="calendar-nav" id="next-month">Mois Suivant ›</button>
+                    </div>
+
+                    <div class="full-calendar-container">
+                        <div class="calendar-legend">
+                            <div class="legend-item">
+                                <div class="legend-color" style="background: var(--success-color);"></div>
+                                <span>Terminé</span>
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-color" style="background: var(--primary-color);"></div>
+                                <span>Aujourd&apos;hui</span>
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-color" style="background: var(--warning-color);"></div>
+                                <span>En attente</span>
+                            </div>
+                        </div>
+
+                        <div class="full-calendar" id="full-calendar">
+                            <!-- Calendar will be generated by JavaScript -->
+                        </div>
+                    </div>
+
+                    <!-- Day Details Drawer -->
+                    <div class="day-drawer" id="day-drawer" style="display: none;">
+                        <div class="drawer-header">
+                            <h3 id="drawer-title">Défis du Jour</h3>
+                            <button class="close-drawer" id="close-drawer">×</button>
+                        </div>
+                        <div class="drawer-content" id="drawer-content">
+                            <!-- Day details will be populated -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Progress Page -->
+                <div id="progress-page" style="display: none;">
+                    <div class="page-header">
+                        <h1>Mes Statistiques</h1>
+                        <p>Suivez votre évolution et célébrez vos réussites</p>
+                    </div>
+
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-number">127</div>
+                            <div class="stat-label">Jours Consécutifs</div>
+                            <div class="stat-trend">+5 cette semaine</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number">3</div>
+                            <div class="stat-label">Défis Actifs</div>
+                            <div class="stat-trend">2 terminés ce mois</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number">85%</div>
+                            <div class="stat-label">Taux de Réussite</div>
+                            <div class="stat-trend">+12% vs mois dernier</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number">12</div>
+                            <div class="stat-label">Défis Terminés</div>
+                            <div class="stat-trend">Niveau Expert!</div>
+                        </div>
+                    </div>
+
+                    <div class="progress-charts">
+                        <div class="chart-container">
+                            <h3>Progression par Défi</h3>
+                            <div class="challenge-progress-list" id="challenge-progress-list">
+                                <!-- Progress charts will be populated -->
+                            </div>
+                        </div>
+
+                        <div class="achievements-container">
+                            <h3>Récompenses & Badges</h3>
+                            <div class="achievements-grid" id="achievements-grid">
+                                <!-- Achievements will be populated -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Settings Page -->
+                <div id="settings-page" style="display: none;">
+                    <div class="page-header">
+                        <h1>Paramètres</h1>
+                        <p>Personnalisez votre expérience 30 Jour</p>
+                    </div>
+
+                    <div class="settings-container">
+                        <div class="settings-section">
+                            <h3>Profil</h3>
+                            <div class="setting-item">
+                                <label>Photo de profil</label>
+                                <div class="avatar-upload">
+                                    <div class="current-avatar">AM</div>
+                                    <button class="upload-btn">Changer</button>
+                                </div>
+                            </div>
+                            <div class="setting-item">
+                                <label>Nom complet</label>
+                                <input type="text" class="setting-input" value="Ahmed Mansouri">
+                            </div>
+                            <div class="setting-item">
+                                <label>Email</label>
+                                <input type="email" class="setting-input" value="ahmed@example.com">
+                            </div>
+                        </div>
+
+                        <div class="settings-section">
+                            <h3>Préférences</h3>
+                            <div class="setting-item">
+                                <label>Langue</label>
+                                <select class="setting-select">
+                                    <option value="fr">Français</option>
+                                    <option value="ar">العربية</option>
+                                    <option value="en">English</option>
+                                </select>
+                            </div>
+                            <div class="setting-item">
+                                <label>Mode sombre</label>
+                                <div class="toggle-switch">
+                                    <input type="checkbox" id="dark-mode-toggle">
+                                    <label for="dark-mode-toggle" class="toggle-label"></label>
+                                </div>
+                            </div>
+                            <div class="setting-item">
+                                <label>Heure de rappel quotidien</label>
+                                <input type="time" class="setting-input" value="09:00">
+                            </div>
+                        </div>
+
+                        <div class="settings-section">
+                            <h3>Notifications</h3>
+                            <div class="setting-item">
+                                <label>Rappels par email</label>
+                                <div class="toggle-switch">
+                                    <input type="checkbox" id="email-notifications" checked>
+                                    <label for="email-notifications" class="toggle-label"></label>
+                                </div>
+                            </div>
+                            <div class="setting-item">
+                                <label>Notifications push</label>
+                                <div class="toggle-switch">
+                                    <input type="checkbox" id="push-notifications" checked>
+                                    <label for="push-notifications" class="toggle-label"></label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="settings-section">
+                            <h3>Sécurité</h3>
+                            <div class="setting-item">
+                                <label>Mot de passe actuel</label>
+                                <input type="password" class="setting-input" placeholder="••••••••">
+                            </div>
+                            <div class="setting-item">
+                                <label>Nouveau mot de passe</label>
+                                <input type="password" class="setting-input" placeholder="••••••••">
+                            </div>
+                            <div class="setting-item">
+                                <label>Confirmer le nouveau mot de passe</label>
+                                <input type="password" class="setting-input" placeholder="••••••••">
+                            </div>
+                            <button class="update-password-btn">Mettre à jour le mot de passe</button>
+                        </div>
+
+                        <div class="settings-section danger-zone">
+                            <h3>Zone de Danger</h3>
+                            <p>Cette action est irréversible</p>
+                            <button class="delete-account-btn">Supprimer mon compte</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- New Challenge Modal -->
+    <div class="modal-overlay" id="new-challenge-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Créer un Nouveau Défi</h2>
+                <button class="modal-close" id="close-modal">×</button>
+            </div>
+            
+            <form id="new-challenge-form">
+                <div class="form-group">
+                    <label class="form-label">Titre du défi</label>
+                    <input type="text" class="form-input" id="challenge-title" placeholder="Ex: Méditation quotidienne" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Description</label>
+                    <textarea class="form-textarea" id="challenge-description" placeholder="Décrivez votre défi en quelques mots..." required></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Catégorie</label>
+                    <select class="form-select" id="challenge-category" required>
+                        <option value="">Choisir une catégorie</option>
+                        <option value="fitness">Fitness & Santé</option>
+                        <option value="learning">Apprentissage</option>
+                        <option value="productivity">Productivité</option>
+                        <option value="creativity">Créativité</option>
+                        <option value="wellbeing">Bien-être</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Difficulté</label>
+                    <select class="form-select" id="challenge-difficulty" required>
+                        <option value="">Choisir la difficulté</option>
+                        <option value="easy">Facile (15-30 min/jour)</option>
+                        <option value="medium">Moyen (30-60 min/jour)</option>
+                        <option value="hard">Difficile (60+ min/jour)</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Icône du défi</label>
+                    <select class="form-select" id="challenge-icon">
+                        <option value="📚">📚 Lecture</option>
+                        <option value="💪">💪 Sport</option>
+                        <option value="🧘">🧘 Méditation</option>
+                        <option value="🎨">🎨 Art</option>
+                        <option value="💻">💻 Technologie</option>
+                        <option value="🌱">🌱 Développement</option>
+                        <option value="🍎">🍎 Nutrition</option>
+                        <option value="🎵">🎵 Musique</option>
+                    </select>
+                </div>
+                
+                <div class="modal-actions">
+                    <button type="button" class="btn-cancel" id="cancel-challenge">Annuler</button>
+                    <button type="submit" class="btn-primary">Créer le Défi</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // ==============================================
+        // JS/MAIN.JS - Initialisation générale
+        // ==============================================
+        
+        // Mock data
+        const challenges = [
+            {
+                id: 1,
+                title: "Lecture Quotidienne",
+                category: "Apprentissage",
+                daysCompleted: 7,
+                totalDays: 30,
+                icon: "📚",
+                todayTask: "Lire 30 pages de votre livre actuel",
+                completed: false
+            },
+            {
+                id: 2,
+                title: "Workout Matinal",
+                category: "Fitness", 
+                daysCompleted: 12,
+                totalDays: 30,
+                icon: "💪",
+                todayTask: "20 minutes cardio + étirements",
+                completed: true
+            },
+            {
+                id: 3,
+                title: "Apprendre le Français",
+                category: "Apprentissage",
+                daysCompleted: 23,
+                totalDays: 30,
+                icon: "🇫🇷",
+                todayTask: "Pratiquer 15 nouveaux mots de vocabulaire",
+                completed: false
+            }
+        ];
+
+        const availableChallenges = [
+            {
+                id: 4,
+                title: "Méditation Matinale",
+                category: "wellbeing",
+                difficulty: "easy",
+                status: "popular",
+                icon: "🧘",
+                description: "Commencez chaque journée avec 10 minutes de méditation pour plus de sérénité.",
+                tags: ["Bien-être", "Mindfulness", "Stress"]
+            },
+            {
+                id: 5,
+                title: "Apprendre Python",
+                category: "learning",
+                difficulty: "medium",
+                status: "new",
+                icon: "💻",
+                description: "Maîtrisez les bases de Python en 30 jours avec des exercices pratiques.",
+                tags: ["Programmation", "Tech", "Carrière"]
+            },
+            {
+                id: 6,
+                title: "Course Quotidienne",
+                category: "fitness",
+                difficulty: "medium",
+                status: "popular",
+                icon: "🏃",
+                description: "Améliorez votre endurance avec 30 minutes de course chaque jour.",
+                tags: ["Sport", "Endurance", "Santé"]
+            },
+            {
+                id: 7,
+                title: "Dessin Créatif",
+                category: "creativity",
+                difficulty: "easy",
+                status: "new",
+                icon: "🎨",
+                description: "Développez votre créativité avec un dessin quotidien.",
+                tags: ["Art", "Créativité", "Expression"]
+            },
+            {
+                id: 8,
+                title: "Productivité GTD",
+                category: "productivity",
+                difficulty: "hard",
+                status: "new",
+                icon: "📋",
+                description: "Maîtrisez la méthode Getting Things Done pour une productivité optimale.",
+                tags: ["Organisation", "Efficacité", "Méthode"]
+            },
+            {
+                id: 9,
+                title: "Cuisine Healthy",
+                category: "wellbeing",
+                difficulty: "medium",
+                status: "popular",
+                icon: "🥗",
+                description: "Préparez un repas sain et équilibré chaque jour.",
+                tags: ["Nutrition", "Cuisine", "Santé"]
+            }
+        ];
+
+        const reminders = [
+            { id: 1, title: "Test de vocabulaire", time: "28 Juin 2025, Vendredi", done: false },
+            { id: 2, title: "Acheter livre d&apos;essai", time: "28 Juin 2025, Vendredi", done: false },
+            { id: 3, title: "Cours de conversation", time: "29 Juin 2025, Samedi", done: false }
+        ];
+
+        const achievements = [
+            { id: 1, title: "Premier Défi", description: "Terminez votre premier défi de 30 jours", icon: "🏆", earned: true },
+            { id: 2, title: "Streak Master", description: "10 jours consécutifs sans interruption", icon: "🔥", earned: true },
+            { id: 3, title: "Multi-tâche", description: "3 défis actifs en même temps", icon: "⚡", earned: true },
+            { id: 4, title: "Perfectionniste", description: "Terminez un défi avec 100% de réussite", icon: "💯", earned: false },
+            { id: 5, title: "Marathon", description: "100 jours de défis au total", icon: "🏃‍♂️", earned: false }
+        ];
+
+        // ==============================================
+        // JS/ROUTER.JS - Navigation entre pages
+        // ==============================================
+        class Router {
+            constructor() {
+                this.currentPage = 'dashboard';
+                this.pages = {};
+                this.initNavigation();
+                this.initPages();
+            }
+
+            initPages() {
+                // Initialize page classes when needed
+                this.pages = {
+                    dashboard: null, // Will be initialized in main
+                    challenges: new ChallengesPage(),
+                    calendar: new CalendarPage(),
+                    progress: new ProgressPage(),
+                    settings: new SettingsPage()
+                };
+            }
+
+            initNavigation() {
+                const navLinks = document.querySelectorAll('.nav-link');
+                navLinks.forEach(link => {
+                    link.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        const page = e.currentTarget.getAttribute('data-page');
+                        this.navigateTo(page);
+                    });
+                });
+
+                // Browse challenges button
+                document.querySelector('.browse-challenges-btn').addEventListener('click', () => {
+                    this.navigateTo('challenges');
+                });
+            }
+
+            navigateTo(page) {
+                // Hide current page
+                const currentPageElement = document.getElementById(`${this.currentPage}-page`);
+                if (currentPageElement) {
+                    currentPageElement.style.display = 'none';
+                }
+
+                // Show new page
+                const newPageElement = document.getElementById(`${page}-page`);
+                if (newPageElement) {
+                    newPageElement.style.display = 'block';
+                }
+
+                // Update active nav link
+                document.querySelectorAll('.nav-link').forEach(link => {
+                    link.classList.remove('active');
+                });
+                document.querySelector(`[data-page="${page}"]`).classList.add('active');
+
+                this.currentPage = page;
+
+                // Refresh page content if needed
+                if (this.pages[page] && this.pages[page].refresh) {
+                    this.pages[page].refresh();
+                }
+            }
+        }
+
+        // ==============================================
+        // JS/COMPONENTS/CHALLENGE-CARD.JS
+        // ==============================================
+        class ChallengeCard {
+            constructor(challenge) {
+                this.challenge = challenge;
+            }
+
+            render() {
+                const progressPercentage = Math.round((this.challenge.daysCompleted / this.challenge.totalDays) * 100);
+                
+                return `
+                    <div class="challenge-card">
+                        <div class="challenge-header">
+                            <div class="challenge-icon">${this.challenge.icon}</div>
+                            <div>
+                                <div class="challenge-title">${this.challenge.title}</div>
+                                <div class="challenge-category">${this.challenge.category}</div>
+                            </div>
+                        </div>
+                        
+                        <div class="challenge-progress">
+                            <div class="progress-text">
+                                <span>Jour ${this.challenge.daysCompleted}/${this.challenge.totalDays}</span>
+                                <span>${progressPercentage}%</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: ${progressPercentage}%"></div>
+                            </div>
+                        </div>
+
+                        <div style="margin-bottom: 1rem; font-size: 0.875rem; color: var(--text-secondary);">
+                            <strong>Aujourd'hui:</strong> ${this.challenge.todayTask}
+                        </div>
+
+                        <button class="mark-done-btn ${this.challenge.completed ? 'completed' : ''}" 
+                                data-challenge-id="${this.challenge.id}"
+                                ${this.challenge.completed ? 'disabled' : ''}>
+                            ${this.challenge.completed ? '✓ Terminé Aujourd&apos;hui' : 'Marquer comme Fait'}
+                        </button>
+                    </div>
+                `;
+            }
+        }
+
+        // ==============================================
+        // JS/PAGES/CHALLENGES.JS
+        // ==============================================
+        class ChallengesPage {
+            constructor() {
+                this.challenges = availableChallenges;
+                this.filteredChallenges = [...this.challenges];
+                this.init();
+            }
+
+            init() {
+                this.renderChallenges();
+                this.attachEventListeners();
+            }
+
+            renderChallenges() {
+                const container = document.getElementById('challenge-gallery');
+                container.innerHTML = this.filteredChallenges.map(challenge => `
+                    <div class="gallery-challenge-card" data-challenge-id="${challenge.id}">
+                        <div class="challenge-image">${challenge.icon}</div>
+                        <div class="challenge-info">
+                            <div class="challenge-tags">
+                                ${challenge.tags.map(tag => `<span class="challenge-tag">${tag}</span>`).join('')}
+                            </div>
+                            <h3 class="challenge-title">${challenge.title}</h3>
+                            <p style="color: var(--text-secondary); margin-bottom: 1rem;">${challenge.description}</p>
+                            <button class="start-challenge-card-btn">Commencer ce Défi</button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            attachEventListeners() {
+                // Filters
+                ['category-filter', 'difficulty-filter', 'status-filter'].forEach(filterId => {
+                    document.getElementById(filterId).addEventListener('change', () => {
+                        this.applyFilters();
+                    });
+                });
+
+                // Start challenge buttons
+                document.addEventListener('click', (e) => {
+                    if (e.target.classList.contains('start-challenge-card-btn')) {
+                        const card = e.target.closest('.gallery-challenge-card');
+                        const challengeId = parseInt(card.getAttribute('data-challenge-id'));
+                        this.startChallenge(challengeId);
+                    }
+                });
+            }
+
+            applyFilters() {
+                const category = document.getElementById('category-filter').value;
+                const difficulty = document.getElementById('difficulty-filter').value;
+                const status = document.getElementById('status-filter').value;
+
+                this.filteredChallenges = this.challenges.filter(challenge => {
+                    return (!category || challenge.category === category) &&
+                           (!difficulty || challenge.difficulty === difficulty) &&
+                           (!status || challenge.status === status);
+                });
+
+                this.renderChallenges();
+            }
+
+            startChallenge(challengeId) {
+                const challenge = this.challenges.find(c => c.id === challengeId);
+                if (challenge) {
+                    // Add to active challenges
+                    challenges.push({
+                        ...challenge,
+                        daysCompleted: 0,
+                        todayTask: `Commencer votre défi: ${challenge.title}`,
+                        completed: false
+                    });
+                    
+                    this.showToast(`Défi "${challenge.title}" ajouté à vos défis actifs! 🎯`);
+                }
+            }
+
+            showToast(message) {
+                const toast = document.createElement('div');
+                toast.style.cssText = `
+                    position: fixed;
+                    top: 20px;
+                    right: 20px;
+                    background: var(--success-color);
+                    color: white;
+                    padding: 1rem 1.5rem;
+                    border-radius: var(--radius);
+                    box-shadow: var(--shadow-md);
+                    z-index: 9999;
+                    animation: slideIn 0.3s ease;
+                `;
+                toast.textContent = message;
+                document.body.appendChild(toast);
+
+                setTimeout(() => {
+                    toast.remove();
+                }, 3000);
+            }
+        }
+
+        // ==============================================
+        // JS/PAGES/CALENDAR.JS
+        // ==============================================
+        class CalendarPage {
+            constructor() {
+                this.currentDate = new Date(2025, 5, 28); // June 28, 2025
+                this.init();
+            }
+
+            init() {
+                this.renderCalendar();
+                this.attachEventListeners();
+            }
+
+            renderCalendar() {
+                const year = this.currentDate.getFullYear();
+                const month = this.currentDate.getMonth();
+                
+                // Update month display
+                const monthNames = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 
+                                   'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
+                document.getElementById('current-month').textContent = `${monthNames[month]} ${year}`;
+
+                // Generate calendar
+                const calendar = document.getElementById('full-calendar');
+                calendar.innerHTML = '';
+
+                // Day headers
+                const dayHeaders = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
+                dayHeaders.forEach(day => {
+                    const header = document.createElement('div');
+                    header.className = 'calendar-day-header';
+                    header.textContent = day;
+                    calendar.appendChild(header);
+                });
+
+                // Get first day and number of days in month
+                const firstDay = new Date(year, month, 1).getDay();
+                const daysInMonth = new Date(year, month + 1, 0).getDate();
+                const adjustedFirstDay = firstDay === 0 ? 6 : firstDay - 1; // Adjust for Monday start
+
+                // Empty cells before month starts
+                for (let i = 0; i < adjustedFirstDay; i++) {
+                    const emptyDay = document.createElement('div');
+                    emptyDay.className = 'calendar-day-full';
+                    calendar.appendChild(emptyDay);
+                }
+
+                // Days of the month
+                for (let day = 1; day <= daysInMonth; day++) {
+                    const dayElement = document.createElement('div');
+                    dayElement.className = 'calendar-day-full';
+                    dayElement.setAttribute('data-day', day);
+                    
+                    const dayNumber = document.createElement('div');
+                    dayNumber.className = 'day-number';
+                    dayNumber.textContent = day;
+                    dayElement.appendChild(dayNumber);
+
+                    // Mark today
+                    if (day === 28 && month === 5 && year === 2025) {
+                        dayElement.classList.add('today');
+                    }
+                    
+                    // Add challenge items for some days
+                    if ([1, 2, 3, 5, 7, 10, 12, 15, 18, 20, 23, 25, 27, 28].includes(day)) {
+                        const challengesDiv = document.createElement('div');
+                        challengesDiv.className = 'day-challenges';
+                        
+                        if (day <= 28) {
+                            dayElement.classList.add('completed');
+                            challengesDiv.innerHTML = `
+                                <div class="day-challenge-item">📚 Lecture</div>
+                                <div class="day-challenge-item">💪 Sport</div>
+                            `;
+                        } else {
+                            challengesDiv.innerHTML = `
+                                <div class="day-challenge-item">📚 Lecture</div>
+                                <div class="day-challenge-item">💪 Sport</div>
+                            `;
+                        }
+                        
+                        dayElement.appendChild(challengesDiv);
+                    }
+
+                    calendar.appendChild(dayElement);
+                }
+            }
+
+            attachEventListeners() {
+                // Month navigation
+                document.getElementById('prev-month').addEventListener('click', () => {
+                    this.currentDate.setMonth(this.currentDate.getMonth() - 1);
+                    this.renderCalendar();
+                });
+
+                document.getElementById('next-month').addEventListener('click', () => {
+                    this.currentDate.setMonth(this.currentDate.getMonth() + 1);
+                    this.renderCalendar();
+                });
+
+                // Day click
+                document.addEventListener('click', (e) => {
+                    if (e.target.closest('.calendar-day-full')) {
+                        const dayElement = e.target.closest('.calendar-day-full');
+                        const day = dayElement.getAttribute('data-day');
+                        if (day) {
+                            this.openDayDrawer(day);
+                        }
+                    }
+                });
+
+                // Close drawer
+                document.getElementById('close-drawer').addEventListener('click', () => {
+                    this.closeDayDrawer();
+                });
+            }
+
+            openDayDrawer(day) {
+                const drawer = document.getElementById('day-drawer');
+                const title = document.getElementById('drawer-title');
+                const content = document.getElementById('drawer-content');
+
+                title.textContent = `Défis du ${day} Juin 2025`;
+                
+                content.innerHTML = `
+                    <div style="margin-bottom: 1.5rem;">
+                        <h4 style="margin-bottom: 1rem;">📚 Lecture Quotidienne</h4>
+                        <p style="color: var(--text-secondary); margin-bottom: 1rem;">Lire 30 pages de votre livre actuel</p>
+                        <button class="mark-done-btn" style="width: 100%;">✓ Terminé</button>
+                    </div>
+                    <div style="margin-bottom: 1.5rem;">
+                        <h4 style="margin-bottom: 1rem;">💪 Workout Matinal</h4>
+                        <p style="color: var(--text-secondary); margin-bottom: 1rem;">20 minutes cardio + étirements</p>
+                        <button class="mark-done-btn" style="width: 100%;">✓ Terminé</button>
+                    </div>
+                    <div>
+                        <h4 style="margin-bottom: 1rem;">🇫🇷 Apprendre le Français</h4>
+                        <p style="color: var(--text-secondary); margin-bottom: 1rem;">Pratiquer 15 nouveaux mots</p>
+                        <button class="mark-done-btn" style="width: 100%;">Marquer comme fait</button>
+                    </div>
+                `;
+
+                drawer.classList.add('open');
+            }
+
+            closeDayDrawer() {
+                document.getElementById('day-drawer').classList.remove('open');
+            }
+        }
+
+        // ==============================================
+        // JS/PAGES/PROGRESS.JS
+        // ==============================================
+        class ProgressPage {
+            constructor() {
+                this.init();
+            }
+
+            init() {
+                this.renderProgressCharts();
+                this.renderAchievements();
+            }
+
+            renderProgressCharts() {
+                const container = document.getElementById('challenge-progress-list');
+                container.innerHTML = challenges.map(challenge => {
+                    const progressPercentage = Math.round((challenge.daysCompleted / challenge.totalDays) * 100);
+                    const degrees = (progressPercentage / 100) * 360;
+                    
+                    return `
+                        <div class="challenge-progress-item">
+                            <div class="progress-info">
+                                <div class="progress-name">${challenge.title}</div>
+                                <div class="progress-days">Jour ${challenge.daysCompleted}/${challenge.totalDays}</div>
+                            </div>
+                            <div class="circular-progress" style="background: conic-gradient(var(--success-color) ${degrees}deg, var(--bg-color) ${degrees}deg);">
+                                ${progressPercentage}%
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            renderAchievements() {
+                const container = document.getElementById('achievements-grid');
+                container.innerHTML = achievements.map(achievement => `
+                    <div class="achievement-item" style="opacity: ${achievement.earned ? 1 : 0.6};">
+                        <div class="achievement-icon">${achievement.icon}</div>
+                        <div class="achievement-info">
+                            <h4>${achievement.title}</h4>
+                            <p>${achievement.description}</p>
+                        </div>
+                        ${achievement.earned ? '<div style="color: var(--success-color); font-weight: 600;">✓ Acquis</div>' : '<div style="color: var(--text-secondary);">🔒 Verrouillé</div>'}
+                    </div>
+                `).join('');
+            }
+        }
+
+        // ==============================================
+        // JS/PAGES/SETTINGS.JS
+        // ==============================================
+        class SettingsPage {
+            constructor() {
+                this.init();
+            }
+
+            init() {
+                this.attachEventListeners();
+            }
+
+            attachEventListeners() {
+                // Update password
+                document.querySelector('.update-password-btn').addEventListener('click', () => {
+                    this.showToast('Mot de passe mis à jour avec succès! 🔒');
+                });
+
+                // Delete account (with confirmation)
+                document.querySelector('.delete-account-btn').addEventListener('click', () => {
+                    if (confirm('Êtes-vous sûr de vouloir supprimer votre compte? Cette action est irréversible.')) {
+                        if (confirm('Dernière confirmation: suppression définitive du compte?')) {
+                            this.showToast('Compte supprimé. Au revoir! 👋');
+                        }
+                    }
+                });
+
+                // Toggle switches
+                document.querySelectorAll('.toggle-switch input').forEach(toggle => {
+                    toggle.addEventListener('change', (e) => {
+                        const label = e.target.nextElementSibling.previousElementSibling.textContent;
+                        this.showToast(`${label} ${e.target.checked ? 'activé' : 'désactivé'} ⚙️`);
+                    });
+                });
+            }
+
+            showToast(message) {
+                const toast = document.createElement('div');
+                toast.style.cssText = `
+                    position: fixed;
+                    top: 20px;
+                    right: 20px;
+                    background: var(--success-color);
+                    color: white;
+                    padding: 1rem 1.5rem;
+                    border-radius: var(--radius);
+                    box-shadow: var(--shadow-md);
+                    z-index: 9999;
+                    animation: slideIn 0.3s ease;
+                `;
+                toast.textContent = message;
+                document.body.appendChild(toast);
+
+                setTimeout(() => {
+                    toast.remove();
+                }, 3000);
+            }
+        }
+
+        // ==============================================
+        // JS/COMPONENTS/MODAL.JS
+        // ==============================================
+        class NewChallengeModal {
+            constructor() {
+                this.modal = document.getElementById('new-challenge-modal');
+                this.form = document.getElementById('new-challenge-form');
+                this.init();
+            }
+
+            init() {
+                this.attachEventListeners();
+            }
+
+            attachEventListeners() {
+                // Open modal buttons
+                document.querySelectorAll('.start-challenge-btn, .new-challenge-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        this.openModal();
+                    });
+                });
+
+                // Close modal
+                document.getElementById('close-modal').addEventListener('click', () => {
+                    this.closeModal();
+                });
+
+                document.getElementById('cancel-challenge').addEventListener('click', () => {
+                    this.closeModal();
+                });
+
+                // Close on overlay click
+                this.modal.addEventListener('click', (e) => {
+                    if (e.target === this.modal) {
+                        this.closeModal();
+                    }
+                });
+
+                // Form submission
+                this.form.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    this.createChallenge();
+                });
+            }
+
+            openModal() {
+                this.modal.classList.add('active');
+                document.body.style.overflow = 'hidden';
+            }
+
+            closeModal() {
+                this.modal.classList.remove('active');
+                document.body.style.overflow = '';
+                this.form.reset();
+            }
+
+            createChallenge() {
+                const formData = new FormData(this.form);
+                const title = document.getElementById('challenge-title').value;
+                const description = document.getElementById('challenge-description').value;
+                const category = document.getElementById('challenge-category').value;
+                const difficulty = document.getElementById('challenge-difficulty').value;
+                const icon = document.getElementById('challenge-icon').value;
+
+                // Add to challenges
+                const newChallenge = {
+                    id: Date.now(),
+                    title,
+                    category: this.getCategoryName(category),
+                    daysCompleted: 0,
+                    totalDays: 30,
+                    icon,
+                    todayTask: `Commencer votre défi: ${title}`,
+                    completed: false
+                };
+
+                challenges.push(newChallenge);
+                
+                this.closeModal();
+                this.showToast(`Défi "${title}" créé avec succès! 🎉`);
+                
+                // Refresh dashboard if we're on it
+                if (document.getElementById('dashboard-page').style.display !== 'none') {
+                    const dashboard = new Dashboard();
+                }
+            }
+
+            getCategoryName(category) {
+                const categoryMap = {
+                    'fitness': 'Fitness',
+                    'learning': 'Apprentissage', 
+                    'productivity': 'Productivité',
+                    'creativity': 'Créativité',
+                    'wellbeing': 'Bien-être'
+                };
+                return categoryMap[category] || category;
+            }
+
+            showToast(message) {
+                const toast = document.createElement('div');
+                toast.style.cssText = `
+                    position: fixed;
+                    top: 20px;
+                    right: 20px;
+                    background: var(--success-color);
+                    color: white;
+                    padding: 1rem 1.5rem;
+                    border-radius: var(--radius);
+                    box-shadow: var(--shadow-md);
+                    z-index: 9999;
+                    animation: slideIn 0.3s ease;
+                `;
+                toast.textContent = message;
+                document.body.appendChild(toast);
+
+                setTimeout(() => {
+                    toast.remove();
+                }, 3000);
+            }
+        }
+        class ProgressBar {
+            constructor(container, value, max = 100) {
+                this.container = container;
+                this.value = value;
+                this.max = max;
+                this.render();
+            }
+
+            render() {
+                const percentage = Math.round((this.value / this.max) * 100);
+                this.container.innerHTML = `
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: ${percentage}%"></div>
+                    </div>
+                `;
+            }
+
+            updateValue(newValue) {
+                this.value = newValue;
+                this.render();
+            }
+        }
+
+        // ==============================================
+        // JS/PAGES/DASHBOARD.JS
+        // ==============================================
+        class Dashboard {
+            constructor() {
+                this.challenges = challenges;
+                this.reminders = reminders;
+                this.init();
+            }
+
+            init() {
+                this.renderChallenges();
+                this.renderReminders();
+                this.renderCalendar();
+                this.attachEventListeners();
+            }
+
+            renderChallenges() {
+                const container = document.getElementById('challenges-grid');
+                container.innerHTML = this.challenges.map(challenge => 
+                    new ChallengeCard(challenge).render()
+                ).join('');
+            }
+
+            renderReminders() {
+                const container = document.getElementById('reminders-list');
+                container.innerHTML = this.reminders.map(reminder => `
+                    <div class="reminder-item">
+                        <div class="reminder-icon">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                            </svg>
+                        </div>
+                        <div class="reminder-content">
+                            <div class="reminder-title">${reminder.title}</div>
+                            <div class="reminder-time">${reminder.time}</div>
+                        </div>
+                        <div class="reminder-actions">
+                            <button class="reminder-btn snooze-btn" data-reminder-id="${reminder.id}">Reporter</button>
+                            <button class="reminder-btn done-btn" data-reminder-id="${reminder.id}">Fait</button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            renderCalendar() {
+                const calendarGrid = document.querySelector('.calendar-grid');
+                const daysInMonth = 30; // June 2025
+                const startDay = 7; // Day of week (0 = Sunday)
+                
+                // Clear existing days (keep headers)
+                const existingDays = calendarGrid.querySelectorAll('.calendar-day');
+                existingDays.forEach(day => day.remove());
+
+                // Add empty cells for days before month starts
+                for (let i = 0; i < startDay; i++) {
+                    const emptyDay = document.createElement('div');
+                    calendarGrid.appendChild(emptyDay);
+                }
+
+                // Add days of the month
+                for (let day = 1; day <= daysInMonth; day++) {
+                    const dayElement = document.createElement('div');
+                    dayElement.className = 'calendar-day';
+                    dayElement.textContent = day;
+                    
+                    // Mark today (28th)
+                    if (day === 28) {
+                        dayElement.classList.add('today');
+                    }
+                    // Mark some completed days
+                    else if ([1, 2, 3, 5, 7, 10, 12, 15, 18, 20, 23, 25, 27].includes(day)) {
+                        dayElement.classList.add('completed');
+                    }
+                    // Mark some pending days
+                    else if ([4, 6, 8, 9, 11, 13, 14, 16, 17, 19, 21, 22, 24, 26].includes(day)) {
+                        dayElement.classList.add('pending');
+                    }
+                    
+                    calendarGrid.appendChild(dayElement);
+                }
+            }
+
+            attachEventListeners() {
+                // Mark challenge as done
+                document.addEventListener('click', (e) => {
+                    if (e.target.classList.contains('mark-done-btn') && !e.target.disabled) {
+                        const challengeId = parseInt(e.target.getAttribute('data-challenge-id'));
+                        this.markChallengeCompleted(challengeId);
+                    }
+                });
+
+                // Handle reminder actions
+                document.addEventListener('click', (e) => {
+                    if (e.target.classList.contains('done-btn')) {
+                        const reminderId = parseInt(e.target.getAttribute('data-reminder-id'));
+                        this.markReminderDone(reminderId);
+                    }
+                });
+            }
+
+            markChallengeCompleted(challengeId) {
+                const challenge = this.challenges.find(c => c.id === challengeId);
+                if (challenge) {
+                    challenge.completed = true;
+                    challenge.daysCompleted += 1;
+                    this.renderChallenges();
+                    
+                    // Show success message
+                    this.showToast('Bravo! Défi marqué comme terminé 🎉');
+                }
+            }
+
+            markReminderDone(reminderId) {
+                const reminderIndex = this.reminders.findIndex(r => r.id === reminderId);
+                if (reminderIndex !== -1) {
+                    this.reminders.splice(reminderIndex, 1);
+                    this.renderReminders();
+                    this.showToast('Rappel marqué comme fait ✅');
+                }
+            }
+
+            showToast(message) {
+                const toast = document.createElement('div');
+                toast.style.cssText = `
+                    position: fixed;
+                    top: 20px;
+                    right: 20px;
+                    background: var(--success-color);
+                    color: white;
+                    padding: 1rem 1.5rem;
+                    border-radius: var(--radius);
+                    box-shadow: var(--shadow-md);
+                    z-index: 9999;
+                    animation: slideIn 0.3s ease;
+                `;
+                toast.textContent = message;
+                document.body.appendChild(toast);
+
+                setTimeout(() => {
+                    toast.remove();
+                }, 3000);
+            }
+        }
+
+        // ==============================================
+        // JS/COMPONENTS/SIDEBAR.JS
+        // ==============================================
+        class Sidebar {
+            constructor() {
+                this.initMobileToggle();
+            }
+
+            initMobileToggle() {
+                const hamburger = document.getElementById('hamburger');
+                const sidebar = document.getElementById('sidebar');
+                
+                hamburger.addEventListener('click', () => {
+                    sidebar.classList.toggle('hidden');
+                });
+
+                // Close sidebar on mobile when clicking outside
+                document.addEventListener('click', (e) => {
+                    if (window.innerWidth <= 768) {
+                        const isClickInsideSidebar = sidebar.contains(e.target);
+                        const isClickOnHamburger = hamburger.contains(e.target);
+                        
+                        if (!isClickInsideSidebar && !isClickOnHamburger && !sidebar.classList.contains('hidden')) {
+                            sidebar.classList.add('hidden');
+                        }
+                    }
+                });
+
+                // Handle window resize
+                window.addEventListener('resize', () => {
+                    if (window.innerWidth > 768) {
+                        sidebar.classList.remove('hidden');
+                    }
+                });
+            }
+        }
+
+        // ==============================================
+        // Initialize Application
+        // ==============================================
+        document.addEventListener('DOMContentLoaded', () => {
+            // Initialize all components
+            const router = new Router();
+            const dashboard = new Dashboard();
+            const sidebar = new Sidebar();
+            const modal = new NewChallengeModal();
+
+            // Set dashboard instance in router
+            router.pages.dashboard = dashboard;
+
+            // Add CSS animation for toast
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes slideIn {
+                    from {
+                        transform: translateX(100%);
+                        opacity: 0;
+                    }
+                    to {
+                        transform: translateX(0);
+                        opacity: 1;
+                    }
+                }
+
+                @media (max-width: 768px) {
+                    .filters-panel {
+                        flex-direction: column;
+                        gap: 1rem;
+                    }
+                    
+                    .challenge-gallery {
+                        grid-template-columns: 1fr;
+                    }
+                    
+                    .stats-grid {
+                        grid-template-columns: repeat(2, 1fr);
+                    }
+                    
+                    .progress-charts {
+                        grid-template-columns: 1fr;
+                    }
+                    
+                    .day-drawer {
+                        width: 100%;
+                    }
+                    
+                    .settings-container {
+                        padding: 0;
+                    }
+                    
+                    .setting-item {
+                        flex-direction: column;
+                        align-items: flex-start;
+                        gap: 0.75rem;
+                    }
+                    
+                    .setting-input,
+                    .setting-select {
+                        max-width: 100%;
+                    }
+                }
+            `;
+            document.head.appendChild(style);
+
+            console.log('30 Jour Platform Initialized! 🚀');
+        });
+    </script>
+</body>
+</html>
